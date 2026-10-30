@@ -911,7 +911,7 @@ window.renderDynamicLessonsAccordion = function(lessonsList) {
                       <span class="text-[10px]">ملء الشاشة</span>
                     </button>
 
-                    <iframe id="iframe_${index}" class="w-full h-full border-0" src="" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
+<iframe id="iframe_${index}" class="w-full h-full border-0 pointer-events-auto" src="" controlslist="nodownload" oncontextmenu="return false;" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
                   </div>
 
                   <!-- زر إغلاق الفيديو بجانبه -->
@@ -1028,19 +1028,25 @@ function startInlineWatermark(index) {
   const user = window.currentUserData;
   const authUser = window.authInstance?.currentUser;
   const name = user?.fullName || authUser?.displayName || "طالب مسجل";
-  const phone = user?.phone || user?.email || "";
+  
+  // جعل النص يقتصر على الاسم الأول أو اختصار لطيف لكي لا يملأ الشاشة
+  const shortName = name.split(" ")[0] + (name.split(" ")[1] ? " " + name.split(" ")[1][0] + "." : "");
 
   const textSpan = wm.querySelector(".wm-text");
-  if (textSpan) textSpan.textContent = `KHEDR & PHYSIO • ${name} • ${phone}`;
+  if (textSpan) textSpan.textContent = `KHEDR & PHYSIO • ${shortName}`;
+  
+  // تقليل الشفافية جداً لكي تكون هادئة وغير مزعجة (opacity: 0.15)
+  wm.style.opacity = "0.15";
   wm.classList.remove("hidden");
 
   if (inlineWmInterval) clearInterval(inlineWmInterval);
+  // زيادة وقت الحركة لكي تتحرك ببطء شديد كل 10 ثوانٍ ولا تشتت انتباه الطالب
   inlineWmInterval = setInterval(() => {
     const topPos = Math.floor(Math.random() * 70) + 15;
     const leftPos = Math.floor(Math.random() * 60) + 15;
     wm.style.top = `${topPos}%`;
     wm.style.left = `${leftPos}%`;
-  }, 4000);
+  }, 10000);
 }
 
 function stopInlineWatermark(index) {
