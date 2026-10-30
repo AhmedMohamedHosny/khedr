@@ -1268,67 +1268,124 @@ import { updateDoc, arrayUnion } from "https://www.gstatic.com/firebasejs/10.13.
     }
   };
 
-  // تشغيل الكويز وحفظ الدرجة في وثيقة الطالب
+// تشغيل الكويز وفحص إذا كان الطالب امتحنه مسبقاً مع توضيح الصح والخطأ
   window.startInteractiveQuiz = function(quizQuestions, lectureId) {
     const quizSection = document.getElementById("quizSection");
     const quizList = document.getElementById("quizQuestionsList");
     const scoreBadge = document.getElementById("quizScoreBadge");
     const submitBtn = document.getElementById("submitQuizBtn");
 
-    if (!quizSection || !quizList) return;
+    if (!quizSection || !quizList || !quizQuestions || quizQuestions.length === 0) return;
 
-    if (scoreBadge) scoreBadge.classList.add("hidden");
-    if (submitBtn) submitBtn.disabled = false;
+    // 1. فحص هل الطالب امتحن هذا الكويز من قبل؟
+    const previousScoreData = window.currentUserData?.quizScores?.[lectureId];
+    if (previousScoreData) {
+      scoreBadge.textContent = `⚠️ لقد أتممت هذا الاختبار مسبقاً | درجتك المسجلة: ${previousScoreData.score} من ${previousScoreData.total}`;
+      scoreBadge.className = "text-xs font-black px-3 py-1 rounded-xl bg-amber-950 text-amber-300 border border-amber-800/40 inline-block";
+      scoreBadge.classList.remove("hidden");
+
+      quizList.innerHTML = `
+        <div class="p-6 text-center bg-[#07111D] border border-slate-800 rounded-2xl space-y-2">
+          <span class="text-3xl">🔒</span>
+          <h4 class="text-xs font-black text-white">الاختبار مغلق</h4>
+          <p class="text-[11px] text-slate-400">غير مسموح بإعادة أداء الاختبار حفاظاً على التقييم الأكاديمي.</p>
+        </div>
+      `;
+      submitBtn.classList.add("hidden");
+      quizSection.classList.remove("hidden");
+      quizSection.scrollIntoView({ behavior: "smooth", block: "center" });
+      return;
+    }
+
+    // 2. إذا لم يمتحنه، يتم عرض الأسئلة
+    scoreBadge.classList.add("hidden");
+    submitBtn.classList.remove("hidden");
+    submitBtn.disabled = false;
+    submitBtn.textContent = "تسليم الإجابات واعتماد النتيجة ✨";
 
     quizList.innerHTML = quizQuestions.map((q, idx) => `
-      <div class="p-4 rounded-2xl bg-[#07111D] border border-slate-800 space-y-3">
+      <div id="q_block_${idx}" class="p-4 rounded-2xl bg-[#07111D] border border-slate-800 space-y-3 transition-colors">
         <h4 class="text-xs font-black text-white leading-5">${idx + 1}. ${q.question}</h4>
         <div class="space-y-2">
           ${q.options.map((opt, optIdx) => `
-            <label class="flex items-center gap-2 p-2.5 rounded-xl bg-[#0F1D2D] hover:bg-slate-800 text-xs text-slate-300 cursor-pointer border border-transparent has-[:checked]:border-amber-400 has-[:checked]:text-amber-300 transition">
+            <label id="opt_label_${idx}_${optIdx}" class="flex items-center gap-2 p-2.5 rounded-xl bg-[#0F1D2D] hover:bg-slate-800 text-xs text-slate-300 cursor-pointer border border-transparent has-[:checked]:border-amber-400 has-[:checked]:text-amber-300 transition">
               <input type="radio" name="q_${idx}" value="${optIdx}" required class="accent-rose-600" />
               <span>${opt}</span>
             </label>
           `).join("")}
         </div>
+        <div id="feedback_${idx}" class="hidden text-[11px] font-bold p-2.5 rounded-xl"></div>
       </div>
     `).join("");
 
     quizSection.classList.remove("hidden");
     quizSection.scrollIntoView({ behavior: "smooth", block: "center" });
 
-    // تصحيح الكويز وحفظ النتيجة تلقائياً للطالب
+    // 3. تسليم الإجابات وإظهار التصحيح وحفظ النتيجة ومنع الإعادة
     document.getElementById("studentQuizForm").onsubmit = async function(e) {
       e.preventDefault();
       let score = 0;
+
+      // منع التعديل على الاختيارات بعد الضغط
+      quizList.querySelectorAll("input[type='radio']").forEach(input => input.disabled = true);
+      submitBtn.disabled = true;
+      submitBtn.textContent = "⏳ جارٍ اعتماد النتيجة...";
+
       quizQuestions.forEach((q, idx) => {
         const sel = document.querySelector(`input[name="q_${idx}"]:checked`);
-        if (sel && parseInt(sel.value, 10) === q.correctIndex) {
+        const userChoice = sel ? parseInt(sel.value, 10) : -1;
+        const correctChoice = q.correctIndex;
+        const feedbackEl = document.getElementById(`feedback_${idx}`);
+
+        // تلوين الاختيار الصحيح دائماً بالأخضر
+        const correctLabel = document.getElementById(`opt_label_${idx}_${correctChoice}`);
+        if (correctLabel) {
+          correctLabel.className = "flex items-center gap-2 p-2.5 rounded-xl bg-emerald-950/60 border border-emerald-500 text-emerald-300 text-xs font-bold";
+        }
+
+        if (userChoice === correctChoice) {
           score++;
+          feedbackEl.className = "text-[11px] font-bold p-2 rounded-lg bg-emerald-950/40 text-emerald-400 border border-emerald-800/40 block";
+          feedbackEl.textContent = "✓ إجابة صحيحة، أحسنت!";
+        } else {
+          // تلوين اختيار الطالب الخاطئ بالأحمر
+          if (userChoice !== -1) {
+            const wrongLabel = document.getElementById(`opt_label_${idx}_${userChoice}`);
+            if (wrongLabel) {
+              wrongLabel.className = "flex items-center gap-2 p-2.5 rounded-xl bg-rose-950/60 border border-rose-500 text-rose-300 text-xs font-bold line-through";
+            }
+          }
+          feedbackEl.className = "text-[11px] font-bold p-2 rounded-lg bg-rose-950/40 text-rose-300 border border-rose-800/40 block";
+          feedbackEl.textContent = `✕ إجابتك غير صحيحة. الإجابة الصحيحة هي: ${q.options[correctChoice]}`;
         }
       });
 
-      scoreBadge.textContent = `نتيجتك: ${score} من ${quizQuestions.length}`;
+      scoreBadge.textContent = `نتيجتك النهائية: ${score} من ${quizQuestions.length}`;
+      scoreBadge.className = "text-xs font-black px-3 py-1 rounded-xl bg-emerald-950 text-emerald-400 border border-emerald-800/40 inline-block";
       scoreBadge.classList.remove("hidden");
-      submitBtn.disabled = true;
+      submitBtn.classList.add("hidden");
 
-      // حفظ النتيجة في قاعدة بيانات الطالب
-      const user = auth.currentUser;
+      // تسجيل الدرجة محلياً وفي Firestore لقفل الكويز فوراً
+      if (!window.currentUserData) window.currentUserData = {};
+      if (!window.currentUserData.quizScores) window.currentUserData.quizScores = {};
+      window.currentUserData.quizScores[lectureId] = {
+        score: score,
+        total: quizQuestions.length,
+        completedAt: new Date().toISOString()
+      };
+
+      const user = window.authInstance?.currentUser;
       if (user) {
         try {
           await updateDoc(doc(db, "students", user.uid), {
-            [`quizScores.${lectureId}`]: {
-              score: score,
-              total: quizQuestions.length,
-              completedAt: new Date().toISOString()
-            }
+            [`quizScores.${lectureId}`]: window.currentUserData.quizScores[lectureId]
           });
         } catch (err) {
-          console.error("Error saving quiz score:", err);
+          console.error("Error saving score:", err);
         }
       }
 
-      alert(`🎉 أحسنت! نتيجتك هي: ${score} من ${quizQuestions.length} وتم تسجيلها في سجلك الأكاديمي.`);
+      alert(`🎉 تم إنهاء الاختبار واعتماد نتيجتك: ${score} من ${quizQuestions.length}. يمكنك مراجعة الإجابات الصحيحة الآن.`);
     };
   };
 
@@ -1702,13 +1759,17 @@ function stopWatermark() {
   }
 }
 
-// تعطيل كليك يمين واختصارات لوحة المفاتيح لمنع الفحص والطباعة وتصوير الشاشة
+// ============ حماية الصفحة ومنع الكونسول والـ Inspect ============
 document.addEventListener("contextmenu", (e) => e.preventDefault());
 
 document.addEventListener("keydown", (e) => {
-  // منع F12، Ctrl+U، Ctrl+Shift+I، Ctrl+Shift+J، Ctrl+P، Ctrl+S
+  // منع F12
+  if (e.key === "F12" || e.keyCode === 123) {
+    e.preventDefault();
+    return false;
+  }
+  // منع اختصارات المطور والطباعة وحفظ الصفحة وعرض السورس كود
   if (
-    e.key === "F12" ||
     (e.ctrlKey && (e.key === "u" || e.key === "U" || e.key === "s" || e.key === "S" || e.key === "p" || e.key === "P")) ||
     (e.ctrlKey && e.shiftKey && (e.key === "I" || e.key === "i" || e.key === "J" || e.key === "j" || e.key === "C" || e.key === "c"))
   ) {
@@ -1716,6 +1777,16 @@ document.addEventListener("keydown", (e) => {
     return false;
   }
 });
+
+// تجميد الصفحة ومسح الكونسول فوراً إذا تم فتحه بأي طريقة جانبية
+setInterval(() => {
+  console.clear();
+  const startTime = performance.now();
+  debugger;
+  if (performance.now() - startTime > 100) {
+    document.body.innerHTML = "<div style='display:flex;justify-content:center;align-items:center;height:100vh;background:#07111D;color:#fff;font-family:sans-serif;'>⚠️ غير مسموح بفتح أدوات المطور حفاظاً على حقوق المنصة.</div>";
+  }
+}, 1000);
 
 
 // دالة تحميل المحاضرات المرفوعة من المشرف للكورس المفتوح
@@ -1750,54 +1821,10 @@ window.loadFirestoreLectures = async function(courseId) {
   }
 };
 
-// تشغيل اختبار الـ MCQ وعرض الأسئلة
-window.renderLessonQuiz = function(quizArray) {
-  const quizSection = document.getElementById("quizSection");
-  const quizList = document.getElementById("quizQuestionsList");
-  const scoreBadge = document.getElementById("quizScoreBadge");
-  const submitBtn = document.getElementById("submitQuizBtn");
-
-  if (!quizArray || quizArray.length === 0) {
-    if (quizSection) quizSection.classList.add("hidden");
-    return;
-  }
-
-  if (scoreBadge) scoreBadge.classList.add("hidden");
-  if (submitBtn) submitBtn.disabled = false;
-
-  quizList.innerHTML = quizArray.map((q, idx) => `
-    <div class="p-4 rounded-2xl bg-[#07111D] border border-slate-800 space-y-3">
-      <h4 class="text-xs font-black text-white leading-5">${idx + 1}. ${q.question}</h4>
-      <div class="space-y-2">
-        ${q.options.map((opt, optIdx) => `
-          <label class="flex items-center gap-2 p-2 rounded-xl bg-[#0F1D2D] hover:bg-slate-800 text-xs text-slate-300 cursor-pointer border border-transparent has-[:checked]:border-amber-400 has-[:checked]:text-amber-300">
-            <input type="radio" name="question_${idx}" value="${optIdx}" required class="accent-rose-600" />
-            <span>${opt}</span>
-          </label>
-        `).join("")}
-      </div>
-    </div>
-  `).join("");
-
-  quizSection.classList.remove("hidden");
-
-  // تصحيح الاختبار عند الإرسال
-  document.getElementById("studentQuizForm").onsubmit = function(e) {
-    e.preventDefault();
-    let score = 0;
-    quizArray.forEach((q, idx) => {
-      const selected = document.querySelector(`input[name="question_${idx}"]:checked`);
-      if (selected && parseInt(selected.value, 10) === q.correctIndex) {
-        score++;
-      }
-    });
-
-    scoreBadge.textContent = `نتيجتك: ${score} من ${quizArray.length}`;
-    scoreBadge.classList.remove("hidden");
-    submitBtn.disabled = true;
-    alert(`🎉 أحسنت! نتيجتك في الاختبار هي: ${score} / ${quizArray.length}`);
+// توجيه الدالة القديمة إلى المشغل الرئيسي المحدث
+  window.renderLessonQuiz = function(quizArray, lectureId) {
+    window.startInteractiveQuiz(quizArray, lectureId || "general_quiz");
   };
-};
 // إغلاق القائمة تلقائياً عند النقر في أي مكان خارجها
 document.addEventListener("click", (e) => {
   const drawer = document.getElementById("drawer");
