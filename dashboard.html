@@ -382,14 +382,31 @@ function renderStudentDashboard(user, data, enrolledCourses) {
     // 1. تحديث شريط الإحصائيات
     document.getElementById("statEnrolled").textContent = enrolledCourses.length;
 
-    // 1.1 عدد الكويزات المُنجزة فعلاً (من quizScores الحقيقية)
+// 1.1 عدد الكويزات المُنجزة فعلاً (من quizScores الحقيقية)
     const quizScores = data.quizScores || {};
     document.getElementById("statQuizzes").textContent = Object.keys(quizScores).length;
 
+    // 2. تحديث كارت استكمال المذاكرة (آخر مقرر تم فتحه)
+    const firstCourseId = enrolledCourses[0];
+    const firstCourseMeta = allCoursesMeta[firstCourseId] || { title: firstCourseId, desc: "محتوى دراسي مفعل" };
+    document.getElementById("continueCourseTitle").textContent = firstCourseMeta.title;
+    document.getElementById("continueLessonTitle").textContent = firstCourseMeta.desc;
+    const progressPercent = Math.min(100, Math.max(15, Object.keys(quizScores).length * 20));
+    document.getElementById("continueProgressBar").style.width = `${progressPercent}%`;
+    document.getElementById("continueProgressLabel").textContent = `${progressPercent}%`;
+
+    // 3. عرض الكورسات المشترك بها الطالب
+    renderEnrolledCourses(enrolledCourses);
+
+    // 4. عرض مواعيد اللايف
+    renderLiveEvents(enrolledCourses);
+
+    // 5. تشغيل محاكي الـ OSCE
+    renderOSCESimulator(enrolledCourses);
 
     // 6. بناء بنك الأسئلة والمذكرات والقاموس الطبي
     renderMCQBank(enrolledCourses);
-    renderPDFVault(enrolledCourses); // ← هنعدلها تحت عشان تحسب الرقم الحقيقي
+    renderPDFVault(enrolledCourses);
     buildStudentGlossary(enrolledCourses);
   }
 

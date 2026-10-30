@@ -300,8 +300,7 @@
   <div id="lecturesSummaryBar" class="text-[11px] font-bold text-slate-400"></div>
   <div id="publishedLecturesList" class="space-y-3"></div>
 </div>
-  </section>
-</div>
+</section>
 </div>
 
 <!-- ============ تبويب القاموس الطبي ============ -->
@@ -331,7 +330,8 @@
       </div>
       <div id="publishedTermsList" class="space-y-3"></div>
     </div>
-  </section>
+</section>
+</div>
 </div>
 <!-- نافذة المودال لإدارة كورسات الطالب (Course Activation Modal) -->
 <div id="courseModal" class="hidden fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm p-4">
@@ -537,8 +537,13 @@ function renderModalCourses() {
   if (!currentEditingStudent) return;
   const enrolled = currentEditingStudent.enrolledCourses || [];
 
-  document.getElementById("modalCoursesList").innerHTML = allCourses.map(crs => {
-    const bundle = packageBundles[crs.id];
+const modalItems = [
+    { id: "pkg_y1s1", title: "📦 باقة الفرقة الأولى كاملة (4 مواد)" },
+    { id: "pkg_y2s1", title: "📦 باقة الفرقة الثانية كاملة (6 مواد)" },
+    ...allCourses
+  ];
+  document.getElementById("modalCoursesList").innerHTML = modalItems.map(crs => {
+        const bundle = packageBundles[crs.id];
     const isEnrolled = bundle ? bundle.every(id => enrolled.includes(id)) : enrolled.includes(crs.id);
 
       return `
