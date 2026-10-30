@@ -906,13 +906,14 @@ window.renderDynamicLessonsAccordion = function(lessonsList) {
                     </div>
 
                     <!-- زر التكبير الذكي -->
-                    <button type="button" onclick="toggleCustomFullscreen('videoContainer_${index}')" class="absolute bottom-3 end-3 z-40 bg-black/70 hover:bg-black/90 text-white p-2 rounded-xl border border-white/20 text-xs font-bold transition flex items-center gap-1 cursor-pointer">
+                    <button type="button" onclick="toggleCustomFullscreen('videoContainer_${index}')" class="absolute top-3 end-3 z-40 bg-black/70 hover:bg-black/90 text-white p-2 rounded-xl border border-white/20 text-xs font-bold transition flex items-center gap-1 cursor-pointer">
                       <span>⛶</span>
                       <span class="text-[10px]">ملء الشاشة</span>
                     </button>
 
 <iframe id="iframe_${index}" class="w-full h-full border-0 pointer-events-auto" src="" controlslist="nodownload" oncontextmenu="return false;" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
-                  </div>
+               <video id="video_${index}" class="hidden w-full h-full" controls controlsList="nodownload nofullscreen noplaybackrate noremoteplayback" disablePictureInPicture disableRemotePlayback playsinline oncontextmenu="return false;"></video>
+</div>
 
                   <!-- زر إغلاق الفيديو بجانبه -->
                   <div class="flex justify-end max-w-2xl mx-auto">
@@ -1000,7 +1001,19 @@ window.playInlineVideo = function(index, videoUrl) {
   
   if (!playerBox || !iframe || !videoUrl) return;
 
+const vid = document.getElementById(`video_${index}`);
+const isDirect = /\.(mp4|webm|mov|m4v)(\?|$)/i.test(videoUrl) || videoUrl.includes("res.cloudinary.com");
+if (isDirect && vid) {
+  iframe.classList.add("hidden");
+  iframe.src = "";
+  vid.classList.remove("hidden");
+  vid.src = videoUrl.trim();
+  vid.play().catch(() => {});
+} else {
+  if (vid) vid.classList.add("hidden");
+  iframe.classList.remove("hidden");
   iframe.src = formatEmbedUrl(videoUrl);
+}
   playerBox.classList.remove("hidden");
   currentActiveInlinePlayer = index;
 
@@ -1014,6 +1027,8 @@ window.closeInlineVideo = function(index) {
   const iframe = document.getElementById(`iframe_${index}`);
   
   if (iframe) iframe.src = "";
+  const vid = document.getElementById(`video_${index}`);
+if (vid) { vid.pause(); vid.removeAttribute("src"); vid.load(); }
   if (playerBox) playerBox.classList.add("hidden");
   stopInlineWatermark(index);
   if (currentActiveInlinePlayer === index) currentActiveInlinePlayer = null;
