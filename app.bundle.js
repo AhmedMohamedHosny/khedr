@@ -1248,6 +1248,23 @@ window.addEventListener('scroll', () => {
   if (bar) bar.style.width = scrolled + '%';
 });
 window.catalogData = {
+  // الكورس الوحيد المتاح حالياً
+  c_anat1: {
+    id: "c_anat1",
+    type: "single",
+    year: "y1",
+    code: { ar: "1ع", en: "Y1" },
+    category: { ar: "الفرقة الأولى • ترم أول", en: "Year 1 • Term 1" },
+    title: { ar: "Anatomy 1 — كورس التشريح العام", en: "Anatomy 1 — General Anatomy Course" },
+    desc: { ar: "دراسة شاملة لـ Anatomical position, Planes, Bones, Joints, Muscles, Upper & Lower limbs.", en: "Comprehensive study of Anatomical Planes, Bones, Joints, Muscular System & Extremities." },
+    price: "499",
+    oldPrice: "750.00",
+    img: "image/anatomy1.png",
+    lessons: []
+  }
+
+  /* ================== باقي الكورسات والباقات موقوفة مؤقتاً ==================
+  ,
   c_medterm: {
     id: "c_medterm",
     type: "single",
@@ -1299,19 +1316,6 @@ window.catalogData = {
       { name: "Tests & Measurements (تقييم وقياسات)", desc: "ROM, Goniometry & MMT", id: "c_tests" },
       { name: "Neurophysiology (فسيولوجيا عصبية)", desc: "Synapse, Reflexes & Motor Control", id: "c_neuro" }
     ]
-  },
-  c_anat1: {
-    id: "c_anat1",
-    type: "single",
-    year: "y1",
-    code: { ar: "1ع", en: "Y1" },
-    category: { ar: "الفرقة الأولى • ترم أول", en: "Year 1 • Term 1" },
-    title: { ar: "Anatomy 1 — كورس التشريح العام", en: "Anatomy 1 — General Anatomy Course" },
-    desc: { ar: "دراسة شاملة لـ Anatomical position, Planes, Bones, Joints, Muscles, Upper & Lower limbs.", en: "Comprehensive study of Anatomical Planes, Bones, Joints, Muscular System & Extremities." },
-    price: "599",
-    oldPrice: "750.00",
-    img: "image/anatomy1.png",
-    lessons: []
   },
   c_phys1: {
     id: "c_phys1",
@@ -1430,6 +1434,7 @@ window.catalogData = {
     img: "image/neurophysiology.png",
     lessons: []
   }
+  =================================================================== */
 };
 
 let currentFilter = "all";
