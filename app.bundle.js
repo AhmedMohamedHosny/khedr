@@ -1473,14 +1473,8 @@ function renderCatalog() {
   const lang = currentLang; // "ar" أو "en"
   const isEn = lang === "en";
 
-  // 1. فلترة العناصر حسب القسم المختار
-  let items = Object.values(window.catalogData).filter(item => {
-    if (currentFilter === "all") return true;
-    if (currentFilter === "pkg") return item.type === "package";
-    if (currentFilter === "y1") return item.year === "y1" || item.year === "all";
-    if (currentFilter === "y2") return item.year === "y2" || item.year === "all";
-    return true;
-  });
+// إجبار السلايدر على عرض Anatomy 1 فقط وتجاهل وحذف أي كورس آخر نهائياً
+  let items = window.catalogData["c_anat1"] ? [window.catalogData["c_anat1"]] : [];
 
   // 2. الفرز الذكي: رفع الكورسات المشترك بها الطالب لتظهر أولاً في البداية تلقائياً
   items.sort((a, b) => {
