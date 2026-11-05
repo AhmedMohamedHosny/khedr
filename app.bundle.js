@@ -4,7 +4,7 @@ const translations = {
     brand: "KHEDR & PHYSIO",
     nav_home: "الرئيسية",
     nav_years: "الفرق الدراسية",
-    nav_courses: "الكورسات والباقات",
+    nav_courses: "الكورسات والباقات", 
     nav_features: "مميزات المنصة",
     nav_honors: "لوحة الشرف",
     nav_instructor: "عن الشارح",
